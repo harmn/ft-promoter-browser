@@ -12,7 +12,7 @@ export default function App() {
     let active = true;
     (async () => {
       try {
-        const res = await fetch('/data/ft-promoter.json');
+        const res = await fetch(`${import.meta.env.BASE_URL}data/ft-promoter.json`);
         if (!res.ok) throw new Error('not found');
         const ext = (await res.json()) as Dataset;
         if (!active) return;
