@@ -20,6 +20,9 @@ export interface MotifDefinition {
   description: string;
   source?: string;
   pfm?: { A: number[]; C: number[]; G: number[]; T: number[] };
+  anchorStart?: number;
+  length?: number;
+  strand?: '+' | '-';
 }
 
 export interface MotifInstance {
