@@ -1,0 +1,6 @@
+node_modules
+dist
+rust/target
+.git
+*.code-workspace
+scripts

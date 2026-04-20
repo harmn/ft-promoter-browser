@@ -1,0 +1,64 @@
+{
+  "datasetLabel": "FT promoter browser export",
+  "gene": "FT / AT1G65480",
+  "promoterWindow": {
+    "start": -2000,
+    "end": 200,
+    "tss": 0
+  },
+  "isDemo": false,
+  "citations": [
+    "Your TFBS scanning workflow citation",
+    "Your promoter extraction workflow citation"
+  ],
+  "motifs": [
+    {
+      "id": "co-core",
+      "label": "CONSTANS",
+      "family": "CCT",
+      "color": "#207178",
+      "anchorStart": -1725,
+      "length": 26,
+      "strand": "+",
+      "description": "Replace with your motif annotation"
+    }
+  ],
+  "accessions": [
+    {
+      "id": "100270",
+      "accessionNumber": 6909,
+      "accessionName": "Col-0",
+      "stockId": "CS76778",
+      "countryCode": "USA",
+      "country": "United States",
+      "latitude": 38.3,
+      "longitude": -92.3
+    }
+  ],
+  "profiles": [
+    {
+      "accessionName": "Col-0",
+      "accessionNumber": 6909,
+      "promoterLength": 2200,
+      "sequenceIdentity": 100,
+      "variantCount": 0,
+      "motifScores": {
+        "co-core": 0.91
+      },
+      "motifInstances": [
+        {
+          "motifId": "co-core",
+          "start": -1725,
+          "length": 26,
+          "strand": "+",
+          "score": 0.91,
+          "delta": "stable"
+        }
+      ],
+      "structuralVariants": [],
+      "notes": [
+        "Reference accession"
+      ]
+    }
+  ]
+}
