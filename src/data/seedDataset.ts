@@ -95,9 +95,9 @@ function buildInstances(accessionName: string): { motifScores: Record<string, nu
     const delta: MotifInstance['delta'] = score > 0.76 ? 'gained' : score < 0.38 ? 'lost' : 'stable';
     motifInstances.push({
       motifId: motif.id,
-      start: motif.anchorStart + offset,
-      length: motif.length,
-      strand: motif.strand,
+      start: (motif.anchorStart ?? 0) + offset,
+      length: motif.length ?? 0,
+      strand: motif.strand ?? '+',
       score: Number(score.toFixed(2)),
       delta,
     });
