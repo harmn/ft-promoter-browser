@@ -31,7 +31,7 @@ export interface MotifInstance {
   length: number;
   strand: Strand;
   score: number;
-  delta: 'gained' | 'lost' | 'stable';
+  delta: 'conserved' | 'variant' | 'gained';
 }
 
 export interface StructuralVariant {

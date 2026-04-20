@@ -708,6 +708,85 @@ tr.is-selected {
   border-top: 1px solid var(--border);
 }
 
+.aln-legend-chip {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-strong);
+  overflow: hidden;
+  transition: opacity 0.15s;
+}
+
+.aln-legend-chip.is-active {
+  background: rgba(32, 113, 120, 0.1);
+}
+
+.aln-legend-chip.is-hidden {
+  opacity: 0.35;
+}
+
+.aln-legend-chip-label {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  padding: 6px 10px 6px 10px;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.aln-legend-chip-label span {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.aln-legend-chip-eye {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 9px;
+  border: none;
+  border-left: 1px solid var(--border);
+  background: none;
+  cursor: pointer;
+  font-size: 0.6rem;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.aln-legend-chip-eye:hover {
+  background: rgba(23, 33, 33, 0.06);
+}
+
+.aln-score-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.aln-score-filter input[type='range'] {
+  width: 160px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.aln-score-filter span:last-child {
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch;
+}
+
 .motif-logo-wrap {
   display: flex;
   flex-direction: row;

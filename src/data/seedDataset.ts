@@ -92,7 +92,7 @@ function buildInstances(accessionName: string): { motifScores: Record<string, nu
     }
 
     const offset = accessionName === 'Col-0' ? 0 : ((shiftedSeed % 31) - 15);
-    const delta: MotifInstance['delta'] = score > 0.76 ? 'gained' : score < 0.38 ? 'lost' : 'stable';
+    const delta: MotifInstance['delta'] = score > 0.76 ? 'gained' : score < 0.38 ? 'variant' : 'conserved';
     motifInstances.push({
       motifId: motif.id,
       start: (motif.anchorStart ?? 0) + offset,

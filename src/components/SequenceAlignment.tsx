@@ -223,6 +223,17 @@ export function SequenceAlignment({ rows, motifs, promoterWindow, highlightMotif
   const useAligned = rows.some((r) => r.profile.alignedSequence);
   if (!useAligned && !rows.some((r) => r.profile.sequence)) return null;
 
+  const [hiddenMotifs, setHiddenMotifs] = useState<Set<string>>(new Set());
+  const [minScore, setMinScore] = useState(0.8);
+
+  const toggleHide = useCallback((id: string) => {
+    setHiddenMotifs((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
   const getSeq = (p: AccessionProfile) => (useAligned ? p.alignedSequence : p.sequence) ?? '';
 
   const refSeq = getSeq(refRow.profile);
@@ -623,6 +634,8 @@ export function SequenceAlignment({ rows, motifs, promoterWindow, highlightMotif
 
                   {/* ── TFBS chips ─────────────────────────────────────── */}
                   {profile.motifInstances.map((inst: MotifInstance, idx: number) => {
+                    if (hiddenMotifs.has(inst.motifId)) return null;
+                    if (inst.score < minScore) return null;
                     const motif = motifs.find((m) => m.id === inst.motifId);
                     if (!motif) return null;
                     const si = inst.start - promoterWindow.start;
@@ -632,12 +645,20 @@ export function SequenceAlignment({ rows, motifs, promoterWindow, highlightMotif
                     if (cStart === undefined || cEnd === undefined) return null;
                     const chipX = cStart * cw;
                     const chipW = Math.max((cEnd - cStart + 1) * cw, 1);
+                    if (chipX + chipW < scrollX - 20 || chipX > scrollX + vpW + 20) return null;
                     const isHL  = inst.motifId === highlightMotif;
+
+                    const deltaGlow =
+                      inst.delta === 'variant' ? 'inset 0 0 0 1.5px rgba(245,158,11,0.9)' :
+                      inst.delta === 'gained'  ? 'inset 0 0 0 1.5px rgba(34,197,94,0.9)'  :
+                      undefined;
+                    const hlGlow = isHL ? '0 0 0 1.5px rgba(23,33,33,0.55)' : undefined;
+                    const boxShadow = [hlGlow, deltaGlow].filter(Boolean).join(', ') || undefined;
 
                     return (
                       <div
                         key={`${inst.motifId}-${inst.start}-${idx}`}
-                        title={`${motif.label} ${inst.start}..${inst.start + inst.length} score=${inst.score.toFixed(2)} (${inst.delta})`}
+                        title={`${motif.label} ${inst.start}..${inst.start + inst.length - 1} · score ${inst.score.toFixed(2)} · ${inst.delta}`}
                         style={{
                           position: 'absolute',
                           left: chipX,
@@ -648,7 +669,7 @@ export function SequenceAlignment({ rows, motifs, promoterWindow, highlightMotif
                           opacity: isHL ? 1 : 0.6,
                           borderRadius: 2,
                           overflow: 'hidden',
-                          boxShadow: isHL ? '0 0 0 1.5px rgba(23,33,33,0.55)' : undefined,
+                          boxShadow,
                         }}
                       >
                         {chipW > 22 && (
@@ -671,18 +692,44 @@ export function SequenceAlignment({ rows, motifs, promoterWindow, highlightMotif
 
       {/* ── Motif legend ───────────────────────────────────────────────────── */}
       <div className="aln-legend">
-        {motifs.map((motif) => (
-          <button
-            key={motif.id}
-            type="button"
-            className={`legend-chip${motif.id === highlightMotif ? ' is-active' : ''}`}
-            style={{ borderColor: motif.color }}
-            onClick={() => onHighlightMotif?.(motif.id)}
-          >
-            <span style={{ background: motif.color }} />
-            {motif.label}
-          </button>
-        ))}
+        {motifs.map((motif) => {
+          const isHL     = motif.id === highlightMotif;
+          const isHidden = hiddenMotifs.has(motif.id);
+          return (
+            <div
+              key={motif.id}
+              className={`aln-legend-chip${isHL ? ' is-active' : ''}${isHidden ? ' is-hidden' : ''}`}
+              style={{ borderColor: motif.color }}
+            >
+              <button
+                type="button"
+                className="aln-legend-chip-label"
+                onClick={() => !isHidden && onHighlightMotif?.(motif.id)}
+              >
+                <span style={{ background: motif.color }} />
+                {motif.label}
+              </button>
+              <button
+                type="button"
+                className="aln-legend-chip-eye"
+                title={isHidden ? `Show ${motif.label}` : `Hide ${motif.label}`}
+                onClick={() => toggleHide(motif.id)}
+              >
+                {isHidden ? '○' : '●'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Score filter ───────────────────────────────────────────────────── */}
+      <div className="aln-score-filter">
+        <span>Min score</span>
+        <input
+          type="range" min={0.7} max={1.0} step={0.01} value={minScore}
+          onChange={(e) => setMinScore(Number(e.target.value))}
+        />
+        <span>{minScore.toFixed(2)}</span>
       </div>
 
       {/* ── PWM sequence logo for highlighted motif ───────────────────────── */}

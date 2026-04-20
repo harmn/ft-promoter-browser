@@ -332,7 +332,7 @@ fn main() -> Result<()> {
         .cloned()
         .ok_or_else(|| anyhow!("Col-0 metadata missing"))?;
 
-    let reference = build_profile(&client, &col0, None, &motifs)?;
+    let reference = build_profile(&client, &col0, None, None, &motifs)?;
 
     let other_accessions: Vec<AccessionMeta> = accessions
         .iter()
@@ -341,12 +341,13 @@ fn main() -> Result<()> {
         .collect();
 
     let reference_sequence = reference.promoter_sequence.clone();
+    let ref_instances = &reference.profile.motif_instances;
     let other_results: Vec<(AccessionMeta, BuildOutput)> = other_accessions
         .into_par_iter()
         .map(|accession| {
             println!("Processing {} ({})", accession.accession_name, accession.accession_number);
             let local_client = Client::builder().build().context("failed to build HTTP client")?;
-            let result = build_profile(&local_client, &accession, Some(&reference_sequence), &motifs)?;
+            let result = build_profile(&local_client, &accession, Some(&reference_sequence), Some(ref_instances), &motifs)?;
             Ok::<_, anyhow::Error>((accession, result))
         })
         .collect::<Result<Vec<_>>>()?;
@@ -439,7 +440,37 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn build_profile(client: &Client, accession: &AccessionMeta, reference_sequence: Option<&str>, motifs: &[ScoredMotif]) -> Result<BuildOutput> {
+fn compute_instance_delta(
+    hit: &MotifInstance,
+    ref_instances: &[MotifInstance],
+    sequence: &str,
+    ref_sequence: &str,
+) -> String {
+    const TOLERANCE: i32 = 50;
+    let best = ref_instances.iter()
+        .filter(|rh| rh.motif_id == hit.motif_id)
+        .filter(|rh| (rh.start - hit.start).abs() <= TOLERANCE)
+        .min_by_key(|rh| (rh.start - hit.start).abs());
+    match best {
+        None => "gained".to_string(),
+        Some(ref_hit) => {
+            let si = (hit.start - PROMOTER_START) as usize;
+            let ri = (ref_hit.start - PROMOTER_START) as usize;
+            let len = hit.length.min(ref_hit.length);
+            if si + len <= sequence.len() && ri + len <= ref_sequence.len() {
+                if sequence[si..si + len] == ref_sequence[ri..ri + len] {
+                    "conserved".to_string()
+                } else {
+                    "variant".to_string()
+                }
+            } else {
+                "conserved".to_string()
+            }
+        }
+    }
+}
+
+fn build_profile(client: &Client, accession: &AccessionMeta, reference_sequence: Option<&str>, ref_instances: Option<&[MotifInstance]>, motifs: &[ScoredMotif]) -> Result<BuildOutput> {
     let accession_code = accession.accession_number.to_string();
     let file_stem = file_stem(accession.accession_number);
     let gff_url = format!("{BASE_URL}/annotations/genes_v05_{file_stem}.gff.gz");
@@ -457,17 +488,15 @@ fn build_profile(client: &Client, accession: &AccessionMeta, reference_sequence:
     let mut motif_instances = Vec::new();
     for motif in motifs {
         let scan = scan_motif(&promoter_sequence, motif);
-        let reference_hits = reference_sequence
-            .map(|sequence| scan_motif(sequence, motif).hits.len())
-            .unwrap_or(scan.hits.len());
-        let delta = match scan.hits.len().cmp(&reference_hits) {
-            Ordering::Greater => "gained",
-            Ordering::Less => "lost",
-            Ordering::Equal => "stable",
-        };
         motif_scores.insert(motif.definition.id.to_string(), scan.promoter_score);
         motif_instances.extend(scan.hits.into_iter().map(|mut hit| {
-            hit.delta = delta.to_string();
+            hit.delta = match ref_instances {
+                None => "conserved".to_string(),
+                Some(refs) => compute_instance_delta(
+                    &hit, refs, &promoter_sequence,
+                    reference_sequence.unwrap_or(&promoter_sequence),
+                ),
+            };
             hit
         }));
     }
@@ -718,7 +747,7 @@ fn scan_motif(sequence: &str, motif: &ScoredMotif) -> ScanResult {
 
     ScanResult {
         promoter_score,
-        hits: hits.into_iter().take(8).collect(),
+        hits,
     }
 }
 
